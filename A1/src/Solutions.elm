@@ -83,14 +83,12 @@ linesIntersect (Line p1 q1) (Line p2 q2) =
 
 -- 1.2.4 Start
 trailingZeroes : Int -> Int
-trailingZeroes n =
+trailingZeroes nrFact =
     let
-        iterate : Int -> Int -> Int
-        iterate result x =
-            if x == 0 then
-                result
-            else
-                iterate (result + x // 5) (x // 5)
+        trailingZeroesAcc : Int -> Int -> Int
+        trailingZeroesAcc result nr =
+            if nr == 0 then result
+            else trailingZeroesAcc (result + nr // 5) (nr // 5)
     in
-    iterate 0 n
+        trailingZeroesAcc 0 nrFact
 -- 1.2.4 End
