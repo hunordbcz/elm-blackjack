@@ -1,6 +1,8 @@
 
 module Date exposing (Date, Month(..), compareMonth, daysInMonth)
 
+import Solutions exposing (..)
+
 type Month = Jan | Feb | Mar | Apr | May | Jun | Jul | Aug | Sep | Oct | Nov | Dec
 type Date = Date {day: Int, month: Month, year: Int}
 
