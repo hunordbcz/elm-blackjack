@@ -30,8 +30,8 @@ type Card = Card Face Suit
 enumSuit = [Clubs, Diamonds, Hearts, Spades]
 enumFace = [Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Ace, Jack, Queen, King]
 
-combineLists : List Card
-combineLists =
+deck : List Card
+deck =
     List.concatMap
         (\face -> 
             List.map 

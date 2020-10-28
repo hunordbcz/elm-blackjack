@@ -1,9 +1,9 @@
 -----------------------
 -- Hunor Debreczeni
--- 17.10.2020
+-- 28.10.2020
 -----------------------
-
 module Regex exposing (..)
+import Html exposing (strong)
 
 type RegexPattern
   = Literal Char
@@ -27,7 +27,12 @@ type alias RegexResult = Result (List Char) (List Char, List Char)
   ```
 -}
 matchLit : Char -> List Char -> RegexResult
-matchLit ch str = Debug.todo "Implement this"
+matchLit ch str = 
+  case str of
+    [] -> Err str
+    x::xs -> 
+      if x == ch then Ok ([x], xs)
+      else Err str
 
 
 {-
@@ -39,7 +44,13 @@ matchLit ch str = Debug.todo "Implement this"
   ```
 -}
 matchSeq : RegexPattern -> RegexPattern -> List Char -> RegexResult
-matchSeq pat1 pat2 input = Debug.todo "Implement this"
+matchSeq pat1 pat2 input =
+  case (match pat1 input) of
+    Err _       -> Err input
+    Ok (x1, y1) -> 
+      case (match pat2 y1) of
+        Err _       -> Err input
+        Ok (x2, y2) -> Ok ((x1 ++ x2), y2)
 
 
 {-
@@ -53,7 +64,14 @@ matchSeq pat1 pat2 input = Debug.todo "Implement this"
   ```
 -}
 matchMany : RegexPattern -> List Char -> RegexResult
-matchMany pattern input = Debug.todo "Implement this"
+matchMany pattern input = 
+  let
+    matchManyUtil inp result=
+      case (match pattern inp) of
+        Err _     -> Ok (result, inp)
+        Ok (x, y) -> matchManyUtil y (result ++ x)
+  in
+    matchManyUtil input []
 
 
 {-
@@ -62,11 +80,17 @@ matchMany pattern input = Debug.todo "Implement this"
   ```elm
   matchOneOf (Literal 'a') (Literal 'b') ['a', 'a', 'a'] == Ok (['a'], ['a', 'a'])
   matchOneOf (Literal 'b') (Literal 'a') ['a', 'a', 'a'] == Ok (['a'], ['a', 'a'])
-  matchOneOf (Seq (Literal 'a') (Literal 'b')) (Seq (Literal 'c') (Literal 'd'))) ['c', 'd', 'a'] (Ok (['c', 'd'], ['a']))
+  matchOneOf (Seq (Literal 'a') (Literal 'b')) (Seq (Literal 'c') (Literal 'd')) ['c', 'd', 'a'] (Ok (['c', 'd'], ['a']))
   ```
 -}
 matchOneOf : RegexPattern -> RegexPattern -> List Char -> RegexResult
-matchOneOf pat1 pat2 input = Debug.todo "Implement this"
+matchOneOf pat1 pat2 input =
+  case (match pat1 input) of
+    Ok (x, y) -> Ok (x, y)
+    Err _     -> 
+      case (match pat2 input) of
+        Ok (x2, y2) -> Ok (x2, (y2))
+        Err _       -> Err input
 
 match : RegexPattern -> List Char -> RegexResult
 match pattern input =
