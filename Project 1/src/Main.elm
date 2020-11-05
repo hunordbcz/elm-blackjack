@@ -76,13 +76,13 @@ update msg model =
     NewPlayerCard newCard ->
       (
         (Model
-          (newCard :: model.hand)
+          (model.hand ++ [newCard])
           (List.filter (\card -> card /= newCard) model.deck)
           model.showDeck
           model.gameStatus
           model.dealerHand
         )
-      , Cmd.ScoreCheck
+      , Cmd.none
       )
 
     NewGame ->
@@ -98,19 +98,21 @@ update msg model =
       )
 
     NewDealerCard newCard ->
-      let
-          cmd =
-            if (List.length model.dealerHand) < 1 then
-              drawCard NewDealerCard model
-            else Cmd.none
+      let 
+        newDealerHand = model.dealerHand ++ [newCard]
+        newDeck = (List.filter (\card -> card /= newCard) model.deck)
+        cmd =
+          if (calculateScore newDealerHand) < 17 then
+            drawCard NewDealerCard model
+          else Cmd.none
       in
         (
           (Model
             model.hand
-            (List.filter (\card -> card /= newCard) model.deck)
+            newDeck
             model.showDeck
             model.gameStatus
-            (newCard :: model.dealerHand)
+            newDealerHand
           )
         , cmd
         )
