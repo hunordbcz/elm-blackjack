@@ -39,7 +39,7 @@ startingModel =
   Model 
     []
     Card.deck
-    True
+    False
     Running
     []
     
@@ -55,13 +55,14 @@ type Status
   | Won 
   | Bust
 
+
 type Msg
   = Draw
   | NewPlayerCard Card
   | ToggleDeck
   | NewGame
   | NewDealerCard Card
-  | ScoreCheck
+  | Stand
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -74,13 +75,29 @@ update msg model =
 
     -- Add the new card to the player's hand (`hand`) and remove it from the `deck`
     NewPlayerCard newCard ->
+      let
+        newHand = (model.hand ++ [newCard])
+        playerScore = calculateScore newHand
+        showDeck =
+          if playerScore >= 21 then True
+          else model.showDeck
+        newModel = 
+          (Model
+            newHand
+            (List.filter (\card -> card /= newCard) model.deck)
+            showDeck
+            model.gameStatus
+            model.dealerHand
+          )
+        status = getGameStatus newModel
+      in
       (
         (Model
-          (model.hand ++ [newCard])
-          (List.filter (\card -> card /= newCard) model.deck)
-          model.showDeck
-          model.gameStatus
-          model.dealerHand
+          newModel.hand
+          newModel.deck
+          showDeck
+          status
+          newModel.dealerHand
         )
       , Cmd.none
       )
@@ -130,29 +147,27 @@ update msg model =
       , Cmd.none
       )
 
-    ScoreCheck ->
+    Stand ->
       let
-        playerScore = calculateScore model.hand
-        dealerScore = calculateScore model.dealerHand
-        cmd = 
-          if dealerScore < 17 then
-            drawCard NewDealerCard model
-          else Cmd.none
-        gameStatus =
-          if dealerScore > 21 then Won
-          else if dealerScore > playerScore then Bust
-          else if playerScore <= 21 then Won
-          else Bust
-        modelType = 
-          (Model
-            model.hand
-            model.deck
-            model.showDeck
-            gameStatus
-            model.dealerHand
-          )
+          newModel = 
+            (Model
+              model.hand
+              model.deck
+              Basics.True
+              model.gameStatus
+              model.dealerHand
+            )
       in
-        (modelType, cmd)
+        (
+          (Model
+                newModel.hand
+                newModel.deck
+                newModel.showDeck
+                (getGameStatus newModel)
+                newModel.dealerHand
+              )
+        , Cmd.none
+        )
 
 drawCard : (Card -> Msg) -> Model -> Cmd Msg
 drawCard msg model =
@@ -221,6 +236,36 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
   Sub.none
 
+
+getGameStatus: Model -> Status
+getGameStatus model =
+  let
+    playerScore = calculateScore model.hand
+    dealerScore = calculateScore model.dealerHand
+  in
+    if model.showDeck == False then Running
+    else if dealerScore > 21 then Won
+    else if dealerScore > playerScore then Bust
+    else if playerScore <= 21 then Won
+    else Bust
+
+statusToString : Status -> String
+statusToString status =
+  case status of
+     Running -> "Running"
+     Won -> "Won"
+     Bust -> "Bust"
+
+boolToString : Bool -> String
+boolToString bool =
+  if bool then "True"
+  else "False"
+
+dealerScoreString : Model -> String
+dealerScoreString model =
+  if model.showDeck == False then String.fromInt (calculateScore (List.take 1 model.dealerHand))
+  else String.fromInt (calculateScore model.dealerHand)
+
 {-
   Use the `viewCard` function for showing the player's hand and the `cardToUnicode` function for the remaining deck.
 -}
@@ -228,20 +273,33 @@ view : Model -> Html Msg
 view model =
   let
     appName = "Blackjack"
+    dealerCards = 
+      if model.showDeck == True then
+        ul [ style "font-size" "6em", style "display" "flex" ] 
+          (List.map (\card -> li [ style "list-style-type" "none", style "color" (cardColor card) ] [ text (cardToUnicode card) ]) model.dealerHand)
+      else 
+        let
+            firstCard = (Maybe.withDefault (Card Ace Diamond) (List.head model.dealerHand)) -- mode.dealerHand surely contains a card
+        in
+          ul [ style "font-size" "6em", style "display" "flex" ] 
+            [
+              li [ style "list-style-type" "none", style "color" (cardColor firstCard) ] [ text (cardToUnicode firstCard) ],
+              li [ style "list-style-type" "none" ] [ text "🂠" ]
+            ]
   in
     div []
       [ 
-        div [] [ h1 [] [text appName] ],
-        div [] [ h2 [] [text ("Dealer score: " ++ (String.fromInt (calculateScore model.dealerHand)))]],
-        ul [ style "font-size" "6em", style "display" "flex" ] 
-          (List.map (\card -> li [ style "list-style-type" "none" ] [ text (cardToUnicode card) ]) model.dealerHand) ,
-        hr [] [],
+        div [] [ h1 [] [text appName, text " - ", text (statusToString model.gameStatus)] ],
         div [] [ h2 [] [text ("Your score: " ++ (String.fromInt (calculateScore model.hand)))]],
         ul [ style "font-size" "6em", style "display" "flex" ] 
-          (List.map (\card -> li [ style "list-style-type" "none" ] [ text (cardToUnicode card) ]) model.hand) ,
-        text (String.fromInt (List.length model.hand)),
+          (List.map (\card -> li [ style "list-style-type" "none", style "color" (cardColor card) ] [ text (cardToUnicode card) ]) model.hand) ,
         hr [] [],
-        text (String.fromInt (List.length model.deck)),
-        button [ onClick Draw, disabled (model.showDeck == False) ] [ text "Hit" ],
-        button [ onClick ToggleDeck ] [ text "Stand" ]
+        div [] [ h2 [] [text ("Dealer score: " ++ (dealerScoreString model))]],
+        dealerCards ,
+        hr [] [],
+        button [ onClick Draw, disabled (model.showDeck == True) ] [ text "Hit" ],
+        button [ onClick Stand, disabled (model.showDeck == True) ] [ text "Stand" ],
+        hr [] [],
+        button [ onClick ToggleDeck ] [ text "Show Cards" ],
+        button [ onClick NewGame ] [ text "New Game" ]
       ]

@@ -67,6 +67,14 @@ deck =
         )
         [Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Ace, Jack, Queen, King]
 
+cardColor : Card -> String
+cardColor (Card face suit) =
+  case suit of
+     Spades -> "black"
+     Hearts -> "red"
+     Clubs  -> "black"
+     Diamond -> "red"
+
 {-
   Modify this function (if needed) to work with your `Card` definition
 -}
@@ -104,10 +112,10 @@ cardToUnicode (Card face suit) =
        Clubs ->  "🃖"
        Diamond -> "🃆"
      Seven -> case suit of 
-       Spades ->"🂩"
-       Hearts -> "🂹"
-       Clubs ->  "🃙"
-       Diamond -> "🃉"
+        Spades ->"🂧"
+        Hearts -> "🂷"
+        Clubs ->  "🃗"
+        Diamond -> "🃇"
      Eight -> case suit of 
        Spades -> "🂨"
        Hearts ->  "🂸"
