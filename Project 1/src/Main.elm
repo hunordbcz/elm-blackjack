@@ -275,13 +275,13 @@ view model =
     appName = "Blackjack"
     dealerCards = 
       if model.showDeck == True then
-        ul [ style "font-size" "6em", style "display" "flex" ] 
+        ul [ style "font-size" "6em", style "display" "flex", style "margin" "0" ] 
           (List.map (\card -> li [ style "list-style-type" "none", style "color" (cardColor card) ] [ text (cardToUnicode card) ]) model.dealerHand)
       else 
         let
             firstCard = (Maybe.withDefault (Card Ace Diamond) (List.head model.dealerHand)) -- mode.dealerHand surely contains a card
         in
-          ul [ style "font-size" "6em", style "display" "flex" ] 
+          ul [ style "font-size" "6em", style "display" "flex", style "margin" "0" ] 
             [
               li [ style "list-style-type" "none", style "color" (cardColor firstCard) ] [ text (cardToUnicode firstCard) ],
               li [ style "list-style-type" "none" ] [ text "🂠" ]
@@ -291,7 +291,7 @@ view model =
       [ 
         div [] [ h1 [] [text appName, text " - ", text (statusToString model.gameStatus)] ],
         div [] [ h2 [] [text ("Your score: " ++ (String.fromInt (calculateScore model.hand)))]],
-        ul [ style "font-size" "6em", style "display" "flex" ] 
+        ul [ style "font-size" "6em", style "display" "flex", style "margin" "0" ] 
           (List.map (\card -> li [ style "list-style-type" "none", style "color" (cardColor card) ] [ text (cardToUnicode card) ]) model.hand) ,
         hr [] [],
         div [] [ h2 [] [text ("Dealer score: " ++ (dealerScoreString model))]],
