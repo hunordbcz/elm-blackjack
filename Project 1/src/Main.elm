@@ -52,7 +52,7 @@ init _ =
 
 type Status 
   = Running 
-  | Won 
+  | Win 
   | Bust
 
 
@@ -77,95 +77,72 @@ update msg model =
     NewPlayerCard newCard ->
       let
         newHand = (model.hand ++ [newCard])
-        playerScore = calculateScore newHand
         showDeck =
-          if playerScore >= 21 then True
+          if (calculateScore newHand) >= 21 then True
           else model.showDeck
         newModel = 
-          (Model
-            newHand
-            (List.filter (\card -> card /= newCard) model.deck)
-            showDeck
-            model.gameStatus
-            model.dealerHand
-          )
-        status = getGameStatus newModel
+          {
+            model |
+            hand = newHand,
+            deck = (List.filter (\card -> card /= newCard) model.deck),
+            showDeck = showDeck
+          }
       in
       (
-        (Model
-          newModel.hand
-          newModel.deck
-          showDeck
-          status
-          newModel.dealerHand
-        )
+        {
+          newModel |
+          gameStatus = (getGameStatus newModel)
+        }
       , Cmd.none
       )
 
     NewGame ->
       (
-        (Model
-          []
-          Card.deck
-          Basics.False
-          Running
-          []
-        )
+        startingModel
       , drawCard NewDealerCard model
       )
 
     NewDealerCard newCard ->
       let 
         newDealerHand = model.dealerHand ++ [newCard]
-        newDeck = (List.filter (\card -> card /= newCard) model.deck)
+        newModel = 
+          {
+            model |
+            deck = (List.filter (\card -> card /= newCard) model.deck),
+            dealerHand = newDealerHand
+          }
         cmd =
           if (calculateScore newDealerHand) < 17 then
-            drawCard NewDealerCard model
+            drawCard NewDealerCard newModel
           else Cmd.none
       in
         (
-          (Model
-            model.hand
-            newDeck
-            model.showDeck
-            model.gameStatus
-            newDealerHand
-          )
+          newModel
         , cmd
         )
 
     -- Toggle (if it's `True` set it `False`, if it's `False` set it to `True`) the `showDeck` member of the `Model`
     ToggleDeck ->
       (
-        (Model
-          model.hand
-          model.deck
-          (Basics.not model.showDeck)
-          model.gameStatus
-          model.dealerHand
-        )
+        {
+          model |
+          showDeck = not model.showDeck
+        }
       , Cmd.none
       )
 
     Stand ->
       let
           newModel = 
-            (Model
-              model.hand
-              model.deck
-              Basics.True
-              model.gameStatus
-              model.dealerHand
-            )
+            { model |
+              showDeck = Basics.True
+            }
       in
         (
-          (Model
-                newModel.hand
-                newModel.deck
-                newModel.showDeck
-                (getGameStatus newModel)
-                newModel.dealerHand
-              )
+          {
+            newModel |
+            gameStatus = (getGameStatus newModel)
+          }
         , Cmd.none
         )
 
@@ -244,16 +221,16 @@ getGameStatus model =
     dealerScore = calculateScore model.dealerHand
   in
     if model.showDeck == False then Running
-    else if dealerScore > 21 then Won
+    else if dealerScore > 21 then Win
     else if dealerScore > playerScore then Bust
-    else if playerScore <= 21 then Won
+    else if playerScore <= 21 then Win
     else Bust
 
 statusToString : Status -> String
 statusToString status =
   case status of
      Running -> "Running"
-     Won -> "Won"
+     Win -> "Win"
      Bust -> "Bust"
 
 boolToString : Bool -> String
